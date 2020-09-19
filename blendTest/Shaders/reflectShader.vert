@@ -6,8 +6,13 @@ layout(location = 1) in vec3 aNormal;
 out vec3 Position;
 out vec3 Normal;
 
-uniform	mat4 view;
-uniform	mat4 projection;
+
+layout(std140) uniform Matrices
+{
+    mat4 view;
+    mat4 projection;
+};
+
 uniform mat4 model;
 
 

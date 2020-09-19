@@ -10,3 +10,5 @@ C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\obj\Debug\blendTest.cspro
 C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\obj\Debug\blendTest.csproj.CopyComplete
 C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\obj\Debug\blendTest.exe
 C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\obj\Debug\blendTest.pdb
+C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\bin\Debug\GlmNet.dll
+C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\bin\Debug\GlmNet.xml

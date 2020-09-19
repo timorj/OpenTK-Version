@@ -11,6 +11,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using PixelFormat = OpenTK.Graphics.OpenGL4.PixelFormat;
 using System.Runtime.InteropServices;
+using GlmNet;
 
 namespace blendTest
 {
@@ -279,6 +280,19 @@ namespace blendTest
 
         private int uboMatrices;
         #endregion
+
+        public struct UniformBlock
+        {
+            public Matrix4 view;
+            public Matrix4 projection;
+            public static readonly int size = BlittableValueType<UniformBlock>.Stride;
+
+            public UniformBlock(Matrix4 view, Matrix4 projection)
+            {
+                this.view = view;
+                this.projection = projection;
+            }
+        }
         //声明窗口主体，注意开启模板测试
         public Window(int width, int height, string title) : base(width, height, new GraphicsMode(new ColorFormat(8, 8, 8, 8), 16, 8), title) { }
 
@@ -452,33 +466,56 @@ namespace blendTest
 
             _camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
 
-            /*
+
+
             //uniform缓冲对象
             //设置绑定点0
+            Matrix4 projection = _camera.GetProjectionMatrix();
+            Matrix4 view = _camera.GetViewMatrix();
+
+            
+            UniformBlock blockBuffer = new UniformBlock (view, projection);
+            Matrix4[] matrices = new Matrix4[] { view, projection };
+
+
             int uniformBlockIndexObject = GL.GetUniformBlockIndex(objectshader.Handle, "Matrices");
             int uniformBlockIndexReflect = GL.GetUniformBlockIndex(reflectShader.Handle, "Matrices");
 
+            
             GL.UniformBlockBinding(objectshader.Handle, uniformBlockIndexObject, 0);
             GL.UniformBlockBinding(reflectShader.Handle, uniformBlockIndexReflect, 0);
 
             GL.GenBuffers(1, out uboMatrices);
             GL.BindBuffer(BufferTarget.UniformBuffer, uboMatrices);
 
-            GL.BufferData(BufferTarget.UniformBuffer, 128, (IntPtr)null, BufferUsageHint.StaticDraw);
+           // GL.BufferData(BufferTarget.UniformBuffer, 128, matrices, BufferUsageHint.StaticDraw);
+            
+            GL.BufferData(BufferTarget.UniformBuffer, 128,(IntPtr) 0, BufferUsageHint.DynamicDraw);
 
+                      
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
             GL.BindBufferRange(BufferRangeTarget.UniformBuffer,0, uboMatrices, IntPtr.Zero, 128);
+            
+            //在uniform缓冲放入数据           
+            
+            
 
-            //在uniform缓冲放入数据
-            Matrix4 projection = _camera.GetProjectionMatrix();
             GL.BindBuffer(BufferTarget.UniformBuffer, uboMatrices);
 
-            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 64, (IntPtr)projection);
-                 
+            //GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 128, matrices);//传Matrix类型的数据到内存需要ref参数,
+            
+            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, UniformBlock.size, ref view);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+
+            GL.BindBuffer(BufferTarget.UniformBuffer, uboMatrices);
+            GL.BufferSubData(BufferTarget.UniformBuffer, (IntPtr)64, 64, ref projection);
+            
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            
+            
 
 
-            */
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.BindVertexArray(0);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
@@ -546,8 +583,8 @@ namespace blendTest
                 view = _camera.GetViewMatrix();
                 projection = _camera.GetProjectionMatrix();
 
-                objectshader.SetMatrix4("model", model);
-                objectshader.SetMatrix4("view", view);
+                //objectshader.SetMatrix4("model", model);
+               // objectshader.SetMatrix4("view", view);
                 objectshader.SetMatrix4("projection", projection);
 
 
@@ -565,7 +602,7 @@ namespace blendTest
             GL.BindVertexArray(skyVAO);
 
             view = new Matrix4(new Matrix3(_camera.GetViewMatrix()));
-           // view = _camera.GetViewMatrix();
+            //view = _camera.GetViewMatrix();
             projection = _camera.GetProjectionMatrix();
 
             skyShader.SetMatrix4("view", view);
@@ -592,8 +629,8 @@ namespace blendTest
             projection = _camera.GetProjectionMatrix();
 
             reflectShader.SetVector3("cameraPos", _camera.Position);
-            reflectShader.SetMatrix4("model", model);
-            reflectShader.SetMatrix4("view", view);
+            //reflectShader.SetMatrix4("model", model);
+            //reflectShader.SetMatrix4("view", view);
             reflectShader.SetMatrix4("projection", projection);
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
