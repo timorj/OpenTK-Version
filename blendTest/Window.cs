@@ -477,6 +477,7 @@ namespace blendTest
             //在使用Uniform Block时，必须将矩阵转置后在放入内存中，否则会导致矩阵读取异常！
             projection = Matrix4.Transpose(projection);
             view = Matrix4.Transpose(view);
+            
             Matrix4[] matrices = new Matrix4[] { view, projection };
                        
             int uniformBlockIndexObject = GL.GetUniformBlockIndex(objectshader.Handle, "Matrices");
@@ -495,19 +496,15 @@ namespace blendTest
                                                           
             GL.BindBuffer(BufferTarget.UniformBuffer, uboMatrices);
 
-            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 128, matrices);
-            /*
+            //GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 128, matrices);//两种传入方式
+            
             GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 64, ref view);//向内存中传入矩阵需要使用ref参数
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
             GL.BindBuffer(BufferTarget.UniformBuffer, uboMatrices);
             GL.BufferSubData(BufferTarget.UniformBuffer, (IntPtr)64, 64, ref projection);
-            */
+            
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
-            
-            
-
-
             
             GL.BindVertexArray(0);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
@@ -521,8 +518,12 @@ namespace blendTest
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             Matrix4 model;
-            Matrix4 view;
+            Matrix4 view = _camera.GetViewMatrix();
+            view = Matrix4.Transpose(view);
             Matrix4 projection;
+            GL.BindBuffer(BufferTarget.UniformBuffer, uboMatrices);
+            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 64, ref view);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
             //混合测试
             //启用混合测试
@@ -576,8 +577,6 @@ namespace blendTest
                 view = _camera.GetViewMatrix();
                 projection = _camera.GetProjectionMatrix();
 
-                //objectshader.SetMatrix4("model", model);
-               // objectshader.SetMatrix4("view", view);
                 objectshader.SetMatrix4("projection", projection);
 
 
@@ -617,14 +616,10 @@ namespace blendTest
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, cubemapTexture);
             reflectShader.SetInt("skyBox", 0);
-            model = Matrix4.CreateTranslation(new Vector3(0.0f, 0.5f, 0.0f));
-            view = _camera.GetViewMatrix();
-            projection = _camera.GetProjectionMatrix();
-
+            model = Matrix4.CreateTranslation(new Vector3(1.0f, 0.5f, 0.0f));
+            
             reflectShader.SetVector3("cameraPos", _camera.Position);
-            //reflectShader.SetMatrix4("model", model);
-            //reflectShader.SetMatrix4("view", view);
-            reflectShader.SetMatrix4("projection", projection);
+            reflectShader.SetMatrix4("model", model);    
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
             GL.Enable(EnableCap.CullFace);
