@@ -10,8 +10,6 @@ layout(std140) uniform Matrices
     mat4 projection;
 };
 
-
-
 out vec2 TexCoords;
 
 void main(void)

@@ -462,61 +462,53 @@ namespace blendTest
             var normalLocation = reflectShader.GetAttribLocation("aNormal");
             GL.EnableVertexAttribArray(normalLocation);
             GL.VertexAttribPointer(normalLocation, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 3 * sizeof(float));
-
+            
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
             _camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
 
-
+            
 
             //uniform缓冲对象
             //设置绑定点0
             Matrix4 projection = _camera.GetProjectionMatrix();
             Matrix4 view = _camera.GetViewMatrix();
 
-            
-            UniformBlock blockBuffer = new UniformBlock (view, projection);
+            //在使用Uniform Block时，必须将矩阵转置后在放入内存中，否则会导致矩阵读取异常！
+            projection = Matrix4.Transpose(projection);
+            view = Matrix4.Transpose(view);
             Matrix4[] matrices = new Matrix4[] { view, projection };
-
-
+                       
             int uniformBlockIndexObject = GL.GetUniformBlockIndex(objectshader.Handle, "Matrices");
             int uniformBlockIndexReflect = GL.GetUniformBlockIndex(reflectShader.Handle, "Matrices");
 
-            
+            //绑定至点
             GL.UniformBlockBinding(objectshader.Handle, uniformBlockIndexObject, 0);
             GL.UniformBlockBinding(reflectShader.Handle, uniformBlockIndexReflect, 0);
 
             GL.GenBuffers(1, out uboMatrices);
             GL.BindBuffer(BufferTarget.UniformBuffer, uboMatrices);
 
-           // GL.BufferData(BufferTarget.UniformBuffer, 128, matrices, BufferUsageHint.StaticDraw);
-            
-            GL.BufferData(BufferTarget.UniformBuffer, 128,(IntPtr) 0, BufferUsageHint.DynamicDraw);
-
-                      
-            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
-
+            GL.BufferData(BufferTarget.UniformBuffer, 128,(IntPtr) null, BufferUsageHint.DynamicDraw);
+                                
             GL.BindBufferRange(BufferRangeTarget.UniformBuffer,0, uboMatrices, IntPtr.Zero, 128);
-            
-            //在uniform缓冲放入数据           
-            
-            
-
+                                                          
             GL.BindBuffer(BufferTarget.UniformBuffer, uboMatrices);
 
-            //GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 128, matrices);//传Matrix类型的数据到内存需要ref参数,
-            
-            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, UniformBlock.size, ref view);
+            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 128, matrices);
+            /*
+            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 64, ref view);//向内存中传入矩阵需要使用ref参数
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
             GL.BindBuffer(BufferTarget.UniformBuffer, uboMatrices);
             GL.BufferSubData(BufferTarget.UniformBuffer, (IntPtr)64, 64, ref projection);
-            
+            */
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
             
             
 
 
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            
             GL.BindVertexArray(0);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
@@ -556,10 +548,11 @@ namespace blendTest
             
           
             //渲染地板
-
+            
             // GL.StencilMask(0x00);           
             GL.BindVertexArray(0);
             GL.BindVertexArray(floorVAO);
+           
             objectshader.Use();
             model = Matrix4.CreateRotationX(0.0f);
             objectshader.SetMatrix4("model", model);
@@ -568,7 +561,7 @@ namespace blendTest
 
           
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
-
+            
             GL.BindVertexArray(0);
             //渲染立方体
             for (int i = 0; i < objectPosition.Length; i++)
