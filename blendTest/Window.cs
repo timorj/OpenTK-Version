@@ -273,12 +273,29 @@ namespace blendTest
             -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
             -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
         };
-
+        
         private bool _firstMove = true;
 
         private Vector2 _lastPos;
 
         private int uboMatrices;
+
+        //学习几何着色器
+        private float[] points =
+        {
+            -0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+             0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+             0.5f, -0.5f, 0.2f, 0.3f, 0.4f
+        };
+
+        private int GeoVBO;
+
+        private int GeoVAO;
+
+        private Shader GeoTestShader;
+
+        
         #endregion
 
         public struct UniformBlock
@@ -298,24 +315,49 @@ namespace blendTest
 
         protected override void OnLoad(EventArgs e)
         {
-            GL.ClearColor(0.2f,0.5f, 0.3f, 1.0f);
-            
+            GL.ClearColor(0.2f,0.0f, 0.3f, 1.0f);
 
-                    
-     
+            GeoTestShader = new Shader("../../Shaders/geoShader.vert", "../../Shaders/geoShader.frag", "../../Shaders/geoShader.geo");
+            GeoTestShader.Use();
 
+            GL.GenBuffers(1, out GeoVBO);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, GeoVBO);
+
+            GL.BufferData(BufferTarget.ArrayBuffer, points.Length * sizeof(float), points, BufferUsageHint.StaticDraw);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+
+            GL.GenVertexArrays(1, out GeoVAO);
+            GL.BindVertexArray(GeoVAO);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, GeoVBO);
+            var positionLocation = GeoTestShader.GetAttribLocation("aPos");
+            GL.EnableVertexAttribArray(positionLocation);
+            GL.VertexAttribPointer(positionLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, GeoVBO);
+            var colorLocation = GeoTestShader.GetAttribLocation("aColor");
+            GL.EnableVertexAttribArray(colorLocation);
+            GL.VertexAttribPointer(colorLocation, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 2 * sizeof(float));
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+
+                      
             _camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
 
-            
-
-
-
+ 
             CursorVisible = false;
             base.OnLoad(e);
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+
+            GeoTestShader.Use();
+            
+            GL.BindVertexArray(GeoVAO);
+
+            GL.DrawArrays(PrimitiveType.Points, 0, 4);
 
 
             SwapBuffers();

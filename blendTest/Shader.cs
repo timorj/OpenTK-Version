@@ -13,7 +13,8 @@ namespace blendTest
     {
         public int Handle;
         private readonly Dictionary<string, int> _uniformLocation;
-        public Shader(string vertShaderPath, string fragShaderPath)
+    
+        public Shader(string vertShaderPath, string fragShaderPath, string geoShaderPath = null)
         {
             //创建顶点着色器
             var shaderSource = LoadSource(vertShaderPath);
@@ -33,11 +34,26 @@ namespace blendTest
             //检验是否编译错误，错误则抛出异常
             CompileShader(fragShader);
 
+            var geometryShader = GL.CreateShader(ShaderType.GeometryShader);
+            //创建几何着色器
+            if (geoShaderPath != null)
+            {
+                shaderSource = LoadSource(geoShaderPath);
+                
+                GL.ShaderSource(geometryShader, shaderSource);
+                CompileShader(geometryShader);
+            }
+
             //创建着色器程序
             Handle = GL.CreateProgram();
 
             GL.AttachShader(Handle, vertexShader);
             GL.AttachShader(Handle, fragShader);
+
+            if (geoShaderPath != null)
+            {
+                GL.AttachShader(Handle, geometryShader);
+            }
 
             LinkProgram(Handle);
 
@@ -46,6 +62,13 @@ namespace blendTest
 
             GL.DeleteShader(vertexShader);
             GL.DeleteShader(fragShader);
+
+            if (geoShaderPath != null)
+            {
+                GL.DetachShader(Handle, geometryShader);
+                GL.DeleteShader(geometryShader);
+                
+            }
 
             //获取着色器语言的uniform
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out int NumberOfUniforms);

@@ -74,6 +74,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="Data\Robot\nanosuit.blend" />
+    <None Include="Data\Robot\nanosuit.mtl" />
+    <None Include="Data\Robot\nanosuit.obj" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
@@ -85,6 +88,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Shaders\geoShader.frag" />
+    <None Include="Shaders\geoshader.geo" />
+    <None Include="Shaders\geoShader.vert" />
     <None Include="Shaders\objectshader.frag" />
     <None Include="Shaders\objectshader.vert" />
     <None Include="Shaders\reflectShader.frag" />
@@ -102,6 +108,24 @@
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Data\Robot\arm_dif.png" />
+    <Content Include="Data\Robot\arm_showroom_ddn.png" />
+    <Content Include="Data\Robot\arm_showroom_spec.png" />
+    <Content Include="Data\Robot\body_dif.png" />
+    <Content Include="Data\Robot\body_showroom_ddn.png" />
+    <Content Include="Data\Robot\body_showroom_spec.png" />
+    <Content Include="Data\Robot\glass_ddn.png" />
+    <Content Include="Data\Robot\glass_dif.png" />
+    <Content Include="Data\Robot\hand_dif.png" />
+    <Content Include="Data\Robot\hand_showroom_ddn.png" />
+    <Content Include="Data\Robot\hand_showroom_spec.png" />
+    <Content Include="Data\Robot\helmet_diff.png" />
+    <Content Include="Data\Robot\helmet_showroom_ddn.png" />
+    <Content Include="Data\Robot\helmet_showroom_spec.png" />
+    <Content Include="Data\Robot\leg_dif.png" />
+    <Content Include="Data\Robot\leg_showroom_ddn.png" />
+    <Content Include="Data\Robot\leg_showroom_spec.png" />
+    <Content Include="Data\Robot\LICENSE.txt" />
     <Content Include="Resource\blending_transparent_window.png" />
     <Content Include="Resource\grass.png" />
     <Content Include="Resource\skybox\back.jpg" />
