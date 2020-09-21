@@ -12,3 +12,5 @@ C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\obj\Debug\blendTest.exe
 C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\obj\Debug\blendTest.pdb
 C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\bin\Debug\GlmNet.dll
 C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\bin\Debug\GlmNet.xml
+C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\bin\Debug\AssimpNet.dll
+C:\Users\hands\source\repos\OpenTk\blendTest\blendTest\bin\Debug\AssimpNet.xml
