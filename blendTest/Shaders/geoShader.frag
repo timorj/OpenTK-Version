@@ -7,12 +7,13 @@ struct Material
 };
 uniform Material material;
 
-in VS_OUT
+in GS_OUT
 {
-	vec3 Normal;
-	vec2 TexCoord;
-	vec3 FragPos;
+	vec2 TexCoords;
+	vec3 GsNormal;
+	vec3 GsFragPos;
 }fs_in;
+
 struct DirLight
 {
 	vec3 direction;
@@ -33,9 +34,9 @@ out vec4 FragColor;
 
 void main(void)
 {
-	vec3 norm = fs_in.Normal;
+	vec3 norm = fs_in.GsNormal;
 
-	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+	vec3 viewDir = normalize(viewPos - fs_in.GsFragPos);
 
 	vec3 result = CalcDirLight(dirlight, norm, viewDir);
 
@@ -53,11 +54,11 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 
 	float spec = pow(max(dot(normal, reflectDir),0.0), material.shininess);
 
-	vec3 ambient = light.ambient * vec3(texture(material.diffuse, fs_in.TexCoord));
+	vec3 ambient = light.ambient * vec3(texture(material.diffuse, fs_in.TexCoords));
 
-	vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, fs_in.TexCoord));
+	vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, fs_in.TexCoords));
 
-	vec3 specular = light.specular * spec * vec3(texture(material.specular, fs_in.TexCoord));
+	vec3 specular = light.specular * spec * vec3(texture(material.specular, fs_in.TexCoords));
 	return ambient + diffuse + specular;
 };
 
