@@ -295,7 +295,10 @@ namespace blendTest
 
         private Shader GeoTestShader;
 
-        
+        private Model robot;
+
+        private int matrices;
+
         #endregion
 
         public struct UniformBlock
@@ -316,50 +319,159 @@ namespace blendTest
         protected override void OnLoad(EventArgs e)
         {
             GL.ClearColor(0.2f,0.0f, 0.3f, 1.0f);
-
-            GeoTestShader = new Shader("../../Shaders/geoShader.vert", "../../Shaders/geoShader.frag", "../../Shaders/geoShader.geo");
-            GeoTestShader.Use();
-
-            GL.GenBuffers(1, out GeoVBO);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, GeoVBO);
-
-            GL.BufferData(BufferTarget.ArrayBuffer, points.Length * sizeof(float), points, BufferUsageHint.StaticDraw);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-
-            GL.GenVertexArrays(1, out GeoVAO);
-            GL.BindVertexArray(GeoVAO);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, GeoVBO);
-            var positionLocation = GeoTestShader.GetAttribLocation("aPos");
-            GL.EnableVertexAttribArray(positionLocation);
-            GL.VertexAttribPointer(positionLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, GeoVBO);
-            var colorLocation = GeoTestShader.GetAttribLocation("aColor");
-            GL.EnableVertexAttribArray(colorLocation);
-            GL.VertexAttribPointer(colorLocation, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 2 * sizeof(float));
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-
-                      
             _camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
 
- 
+            GeoTestShader = new Shader("../../Shaders/geoShader.vert", "../../Shaders/geoShader.frag");
+            GeoTestShader.Use();
+
+            robot = new Model("../../Data/Robot/nanosuit.obj");
+            
+            //设置帧四边形
+            ScreenShader = new Shader("../../Shaders/screenShader.vert", "../../Shaders/screenShader.frag");
+            ScreenShader.Use();
+            ScreenShader.SetInt("screenTexture", 0);
+            GL.GenBuffers(1, out quadVBO);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, quadVBO);
+            GL.BufferData(BufferTarget.ArrayBuffer, sizeof(float) * quadVertices.Length, quadVertices, BufferUsageHint.StaticDraw);
+
+            GL.GenVertexArrays(1, out quadVAO);
+            GL.BindVertexArray(quadVAO);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, quadVBO);
+            var positionLocation = ScreenShader.GetAttribLocation("aPos");
+            GL.EnableVertexAttribArray(positionLocation);
+            GL.VertexAttribPointer(positionLocation, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, quadVBO);
+            var textureLocation = ScreenShader.GetAttribLocation("aTexture");
+            GL.EnableVertexAttribArray(textureLocation);
+            GL.VertexAttribPointer(textureLocation, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+
+            //创建帧缓冲
+            GL.GenFramebuffers(1, out FBO);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
+
+            //创建纹理缓冲
+            GL.GenTextures(1, out TextureColorBuffer);
+            GL.BindTexture(TextureTarget.Texture2D, TextureColorBuffer);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, 800, 600, 0, PixelFormat.Rgb, PixelType.Byte, IntPtr.Zero);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+
+            //将纹理缓冲附加至当前绑定的帧缓冲对象
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, TextureColorBuffer, 0);
+
+            
+            //当不需要对深度缓冲和模板缓冲采样时，创建渲染缓冲对象
+            GL.GenRenderbuffers(1, out RBO);
+            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, RBO);
+
+            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, 800, 600);
+           
+
+            //将渲染缓冲对象附加到帧缓冲上面
+            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, RBO);
+            if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete) 
+            {
+                throw new Exception($"帧缓冲不完整，请检查帧缓冲！{FBO}");
+            }
+
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            
+            // 设置uniform缓冲
+            Matrix4 view = _camera.GetViewMatrix();
+            Matrix4 projection = _camera.GetProjectionMatrix();
+            view = Matrix4.Transpose(view);
+            projection = Matrix4.Transpose(projection);
+
+            int uniformIndexObject = GL.GetUniformBlockIndex(GeoTestShader.Handle, "Matrices");
+
+            GL.UniformBlockBinding(GeoTestShader.Handle, uniformIndexObject, 0);
+
+            GL.GenBuffers(1, out matrices);
+
+            GL.BindBuffer(BufferTarget.UniformBuffer, matrices);
+            GL.BufferData(BufferTarget.UniformBuffer, 128, IntPtr.Zero, BufferUsageHint.StaticDraw);
+
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+
+            GL.BindBufferRange(BufferRangeTarget.UniformBuffer, 0, matrices, IntPtr.Zero, 128);
+
+            GL.BindBuffer(BufferTarget.UniformBuffer, matrices);
+            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 64, ref view);
+
+            GL.BindBuffer(BufferTarget.UniformBuffer, matrices);
+            GL.BufferSubData(BufferTarget.UniformBuffer, (IntPtr)64, 64, ref projection);
+
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+
+
+
+
             CursorVisible = false;
             base.OnLoad(e);
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+         
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
+            GL.Enable(EnableCap.DepthTest);
+            GL.ClearColor(0.1f, 0.2f, 0.1f, 1.0f);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit );
+
+            //更新view矩阵
+            Matrix4 view = _camera.GetViewMatrix();
+            view = Matrix4.Transpose(view);
+            GL.BindBuffer(BufferTarget.UniformBuffer, matrices);
+            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, 64, ref view);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
             GeoTestShader.Use();
+            Matrix4 model = Matrix4.CreateRotationX(0.0f);
+            GeoTestShader.SetMatrix4("model", model);
+
+            GeoTestShader.SetVector3("viewPos", _camera.Position);
+
+            //物体材质
+            GeoTestShader.SetInt("material.diffuse", 0);
+            GeoTestShader.SetInt("material.specular", 1);
+            GeoTestShader.SetFloat("material.shininess", 32.0f);
+
+            //光源
+            //平行光
+            GeoTestShader.SetVector3("dirlight.direction", new Vector3(-2.0f));
+            GeoTestShader.SetVector3("dirlight.ambient", new Vector3(0.7f));
+            GeoTestShader.SetVector3("dirlight.diffuse", new Vector3(0.5f));
+            GeoTestShader.SetVector3("dirlight.specular", new Vector3(0.5f));
+
+            robot.Draw(GeoTestShader);
+
+            GL.BindVertexArray(0);
             
-            GL.BindVertexArray(GeoVAO);
+            
+            //恢复默认帧缓冲
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.Disable(EnableCap.DepthTest);
+            GL.ClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+        
 
-            GL.DrawArrays(PrimitiveType.Points, 0, 4);
+            ScreenShader.Use();
+            GL.BindVertexArray(quadVAO);
 
+            GL.BindTexture(TextureTarget.Texture2D, TextureColorBuffer);
 
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+            
+            GL.BindVertexArray(0);
+            GL.Enable(EnableCap.DepthTest);
+            
             SwapBuffers();
             base.OnRenderFrame(e);
         }
