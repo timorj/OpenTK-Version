@@ -321,7 +321,7 @@ namespace blendTest
         protected override void OnLoad(EventArgs e)
         {
             GL.ClearColor(0.2f,0.0f, 0.3f, 1.0f);
-            _camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
+            _camera = new Camera(new Vector3(Vector3.Zero.X + 2.0f, 10.0f, Vector3.UnitZ.Z * 12) , Width / (float)Height);
 
             GeoTestShader = new Shader("../../Shaders/geoShader.vert", "../../Shaders/geoShader.frag", "../../Shaders/geoShader.geo");
             GeoTestShader.Use();
@@ -482,20 +482,28 @@ namespace blendTest
             GL.BindVertexArray(0);
 
             //天空盒
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Lequal);
             skyShader.Use();
 
-            view = new Matrix4(new Matrix3(view));
+            view = new Matrix4(new Matrix3(_camera.GetViewMatrix()));
             skyShader.SetMatrix4("view", view);
 
             Matrix4 projection = _camera.GetProjectionMatrix();
 
             skyShader.SetMatrix4("projection", projection);
 
+            skyShader.SetInt("cubeTexture", 0);
+
             GL.BindVertexArray(skyVAO);
+
+            GL.ActiveTexture(TextureUnit.Texture0);
 
             GL.BindTexture(TextureTarget.TextureCubeMap, cubemapTexture);
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+
+            GL.DepthFunc(DepthFunction.Less);
 
             GL.BindVertexArray(0);
 
